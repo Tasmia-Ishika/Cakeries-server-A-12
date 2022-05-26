@@ -103,7 +103,6 @@ async function run() {
 
 
         // admin setup start => User update after signup in database
-
         app.put('/user/:email', async (req, res) => {
             const email = req.params.email;
             const user = req.body;
@@ -117,9 +116,21 @@ async function run() {
             res.send({ result, token });
         })
 
+        // find user
         app.get('/user', verifyJWT, async (req, res) => {
             const users = await userCollection.find().toArray();
             res.send(users);
+        })
+
+        //making an admin setup
+        app.put('/user/admin/:email', async (req, res) => {
+            const email = req.params.email;
+            const filter = { email: email };
+            const updateDoc = {
+                $set: { role: 'admin' },
+            };
+            const result = await userCollection.updateOne(filter, updateDoc);
+            res.send( result );
         })
 
     }
