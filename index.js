@@ -80,26 +80,27 @@ async function run() {
             res.send(result);
         })
         //  To show users previous order on dashboard
-        app.get('/orders', verifyJWT, async (req, res) => {
+       /* app.get('/orders', verifyJWT, async (req, res) => {
             const customer = req.query.customerName;
             const query = { customer: customer };
             const orders = await orderCollection.find(query).toArray();
             res.send(orders);
+        })*/
+
+
+        app.get('/orders', verifyJWT, async (req, res) => {
+            const customerEmail = req.query.customer;
+            const decodedEmail = req.decoded.email;
+            console.log(decodedEmail, customerEmail)
+            if (decodedEmail === customerEmail) {
+                const query = { customerEmail: customerEmail };
+                const orders = await orderCollection.find(query).toArray();
+                return res.send(orders);
+            }
+            else {
+                return res.status(403).send({ message: 'forbidden access' });
+            }
         })
-
-
-        //  app.get('/orders', verifyJWT, async (req, res) => {
-        //      const customerEmail = req.query.customerEmail;
-        //      const decodedEmail = req.decoded.email;
-        //      if (decodedEmail === decodedEmail) {
-        //          const query = { customerEmail : customerEmail };
-        //          const orders = await orderCollection.find(query).toArray();
-        //          return res.send(orders);
-        //      }
-        //      else {
-        //          return res.status(403).send({ message: 'forbidden access' });
-        //      }
-        //  })
 
 
         // admin setup start => User update after signup in database
@@ -123,7 +124,7 @@ async function run() {
         })
 
         // identify admin from db
-        app.get('/admin/:email', async(req, res) => {
+        app.get('/admin/:email', async (req, res) => {
             const email = req.params.email;
             const user = await userCollection.findOne({ email: email });
             const isAdmin = user.role === 'admin';
