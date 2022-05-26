@@ -44,6 +44,19 @@ async function run() {
         const orderCollection = client.db('Cakeries_bd').collection('orders');
         const userCollection = client.db('Cakeries_bd').collection('users');
 
+
+        // verify admin
+        const verifyAdmin = async (req, res, next) => {
+            const requester = req.decoded.email;
+            const requesterAccount = await userCollection.findOne({ email: requester });
+            if (requesterAccount.role === 'admin') {
+                next();
+            }
+            else {
+                return res.status(403).send({ message: 'forbidden access' });
+            }
+        }
+
         // To load product in home page
         app.get('/product', async (req, res) => {
             const query = {};
@@ -154,6 +167,21 @@ async function run() {
             res.send({ success: true, result });
         })
 
+        // manage product
+        app.get('/product', verifyAdmin, async (req, res) => {
+            const products = await productCollection.find().toArray();
+            res.send(products);
+        })
+
+        // delete from manage product
+        app.delete('/product/:id', async (req, res) => {
+            const id = req.params.id;
+            const filter = { _id: ObjectId(id) };
+            const result = await productCollection.deleteOne(filter);
+            res.send(result);
+        })
+
+            
     }
     finally {
 
