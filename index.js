@@ -79,15 +79,10 @@ async function run() {
             const result = await productCollection.updateOne(filter, updatedDoc, options);
             res.send(result);
         })
+
+
+
         //  To show users previous order on dashboard
-       /* app.get('/orders', verifyJWT, async (req, res) => {
-            const customer = req.query.customerName;
-            const query = { customer: customer };
-            const orders = await orderCollection.find(query).toArray();
-            res.send(orders);
-        })*/
-
-
         app.get('/orders', verifyJWT, async (req, res) => {
             const customerEmail = req.query.customer;
             const decodedEmail = req.decoded.email;
@@ -150,6 +145,13 @@ async function run() {
             else {
                 res.status(403).send({ message: 'forbidden' });
             }
+        })
+
+        // Add Product
+        app.post('/product', async (req, res) => {
+            const product = req.body;
+            const result = await productCollection.insertOne(product);
+            res.send({ success: true, result });
         })
 
     }
