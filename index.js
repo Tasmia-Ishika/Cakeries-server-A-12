@@ -21,6 +21,7 @@ async function run() {
         console.log('db connected');
         const productCollection = client.db('Cakeries_bd').collection('products');
         const orderCollection = client.db('Cakeries_bd').collection('orders');
+        const userCollection = client.db('Cakeries_bd').collection('users');
 
         // To load product in home page
         app.get('/product', async (req, res) => {
@@ -41,7 +42,7 @@ async function run() {
             const order = req.body;
             const result = await orderCollection.insertOne(order);
             res.send(result)
-        }) 
+        })
 
         //  update stock after any order 
         app.put('/product/:id', async (req, res) => {
@@ -55,6 +56,26 @@ async function run() {
                 }
             };
             const result = await productCollection.updateOne(filter, updatedDoc, options);
+            res.send(result);
+        })
+        // To show users previous order on dashboard
+        app.get('/orders', async (req, res) => {
+            const customer = req.query.customerName;
+            const query = { customer: customer };
+            const orders = await orderCollection.find(query).toArray();
+            res.send(orders);
+        })
+
+        // admin setup
+        app.put('/user/:email', async (req, res) => {
+            const email = req.params.email;
+            const user = req.body;
+            const filter = { email: email };
+            const options = { upsert: true };
+            const updateDoc = {
+                $set: user,
+            };
+            const result = await userCollection.updateOne(filter, updateDoc, options);
             res.send(result);
         })
 
