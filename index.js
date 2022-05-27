@@ -4,6 +4,7 @@ const cors = require('cors');
 const jwt = require('jsonwebtoken');
 require('dotenv').config();
 const port = process.env.PORT || 5000;
+const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
 
 const app = express();
 
@@ -43,6 +44,7 @@ async function run() {
         const productCollection = client.db('Cakeries_bd').collection('products');
         const orderCollection = client.db('Cakeries_bd').collection('orders');
         const userCollection = client.db('Cakeries_bd').collection('users');
+        const paymentCollection = client.db('Cakeries_bd').collection('payments');
 
 
         // verify admin
@@ -180,8 +182,62 @@ async function run() {
             const result = await productCollection.deleteOne(filter);
             res.send(result);
         })
+        // payment started
+        app.get('/orders/:id', verifyJWT, async (req, res) => {
+            const id = req.params.id;
+            const query = { _id: ObjectId(id) };
+            const order = await orderCollection.findOne(query);
+            res.send(order);
+        })
 
-            
+        // payment
+        app.post('/create-payment-intent', verifyJWT, async (req, res) => {
+            const product = req.body;
+            const price = product.totalPrice;
+            const amount = price * 100;
+            const paymentIntent = await stripe.paymentIntents.create({
+                amount: amount,
+                currency: 'usd',
+                payment_method_types: ['card']
+            });
+            res.send({ clientSecret: paymentIntent.client_secret })
+        });
+
+        // set payment in database
+        app.patch('/orders/:id', verifyJWT, async (req, res) => {
+            const id = req.params.id;
+            const payment = req.body;
+            const filter = { _id: ObjectId(id) };
+            const updatedDoc = {
+                $set: {
+                    paid: true,
+                    transactionId: payment.transactionId,
+                }
+            }
+
+            const result = await paymentCollection.insertOne(payment);
+            const updatedOrder = await orderCollection.updateOne(filter, updatedDoc);
+            res.send(updatedDoc);
+
+
+        })
+
+        // app.post('/create-payment-intent', verifyJWT, async (req, res) => {
+        //     const product = req.body;
+        //     const price = product.totalPrice;
+        //     const amount = price * 100;
+        //     const paymentIntent = await stripe.paymentIntents.create({
+        //         amount: amount,
+        //         currency: 'usd',
+        //         payment_method_types: ['card']
+        //     });
+        //     res.send({ clientSecret: paymentIntent.client_secret })
+
+        // })
+
+
+
+
     }
     finally {
 
