@@ -43,6 +43,7 @@ async function run() {
         console.log('db connected');
         const productCollection = client.db('Cakeries_bd').collection('products');
         const orderCollection = client.db('Cakeries_bd').collection('orders');
+        const reviewCollection = client.db('Cakeries_bd').collection('reviews');
         const userCollection = client.db('Cakeries_bd').collection('users');
         const paymentCollection = client.db('Cakeries_bd').collection('payments');
 
@@ -58,6 +59,25 @@ async function run() {
                 return res.status(403).send({ message: 'forbidden access' });
             }
         }
+
+        // Reviews started --> Getting all reviews
+        app.get('/reviews', async (req, res) => {
+            const query = {};
+            const cursor = reviewCollection.find(query);
+            const reviews = await cursor.toArray();
+            res.send(reviews)
+        })
+
+        //Posting new reviews
+        app.post('/reviews', async (req, res) => {
+            const review = req.body;
+            const result = await reviewCollection.insertOne(review);
+            res.send({ success: true, result });
+        })
+
+
+
+
 
         // To load product in home page
         app.get('/product', async (req, res) => {
@@ -133,8 +153,8 @@ async function run() {
             res.send(users);
         })
 
-        // identify admin from db
-        app.get('/admin/:email', async (req, res) => {
+        // identify Admin from db
+        app.get('/admin/:email', verifyJWT, async (req, res) => {
             const email = req.params.email;
             const user = await userCollection.findOne({ email: email });
             const isAdmin = user.role === 'admin';
