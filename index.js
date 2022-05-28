@@ -9,7 +9,7 @@ const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
 const app = express();
 
 // middleware
-app.use(cors({ origin: "https://cakeries-bd.web.app" }));
+app.use(cors());
 app.use(express.json());
 
 
@@ -227,7 +227,7 @@ async function run() {
         });
 
         // set payment in database
-        app.patch('/orders/:id', verifyJWT, async (req, res) => {
+        app.put('/orders/:id', verifyJWT, async (req, res) => {
             const id = req.params.id;
             const payment = req.body;
             const filter = { _id: ObjectId(id) };
