@@ -35,8 +35,6 @@ function verifyJWT(req, res, next) {
     });
 }
 
-
-
 async function run() {
     try {
         await client.connect();
@@ -45,6 +43,7 @@ async function run() {
         const orderCollection = client.db('Cakeries_bd').collection('orders');
         const reviewCollection = client.db('Cakeries_bd').collection('reviews');
         const userCollection = client.db('Cakeries_bd').collection('users');
+        const userProfileCollection = client.db('Cakeries_bd').collection('usersProfile');
         const paymentCollection = client.db('Cakeries_bd').collection('payments');
 
 
@@ -61,7 +60,7 @@ async function run() {
         }
 
         // Reviews started --> Getting all reviews
-        app.get('/reviews', async (req, res) => {
+        app.get('/reviews',  async (req, res) => {
             const query = {};
             const cursor = reviewCollection.find(query);
             const reviews = await cursor.toArray();
@@ -74,9 +73,6 @@ async function run() {
             const result = await reviewCollection.insertOne(review);
             res.send({ success: true, result });
         })
-
-
-
 
 
         // To load product in home page
@@ -117,7 +113,7 @@ async function run() {
 
 
 
-        //  To show users previous order on dashboard
+        //  To show users previous order on dashboard's My Order
         app.get('/orders', verifyJWT, async (req, res) => {
             const customerEmail = req.query.customer;
             const decodedEmail = req.decoded.email;
@@ -132,8 +128,16 @@ async function run() {
             }
         })
 
+        // Cancel Order from MyOrder By users
+        app.delete('/orders/:id', async (req, res) => {
 
-        // admin setup start => User update after signup in database
+            const id = req.params.id;
+            const filter = { _id: ObjectId(id) };
+            const result = await orderCollection.deleteOne(filter);
+            res.send(result);
+        })
+
+        // user identify
         app.put('/user/:email', async (req, res) => {
             const email = req.params.email;
             const user = req.body;
@@ -161,8 +165,6 @@ async function run() {
             res.send({ admin: isAdmin })
 
         })
-
-
 
         //making an admin setup
         app.put('/user/admin/:email', verifyJWT, async (req, res) => {
@@ -238,34 +240,42 @@ async function run() {
             const result = await paymentCollection.insertOne(payment);
             const updatedOrder = await orderCollection.updateOne(filter, updatedDoc);
             res.send(updatedDoc);
-
-
         })
 
-        // app.post('/create-payment-intent', verifyJWT, async (req, res) => {
-        //     const product = req.body;
-        //     const price = product.totalPrice;
-        //     const amount = price * 100;
-        //     const paymentIntent = await stripe.paymentIntents.create({
-        //         amount: amount,
-        //         currency: 'usd',
-        //         payment_method_types: ['card']
-        //     });
-        //     res.send({ clientSecret: paymentIntent.client_secret })
+        // User's Profile
 
-        // })
+        app.put('/userProfile/:email', async (req, res) => {
+            const email = req.params.email;
+            const userProfile = req.body;
+            const filter = { email: email };
+            const options = { upsert: true };
+            const updatedDoc = {
+                $set: userProfile,
+            };
 
+            const result = await userProfileCollection.updateOne(filter, updatedDoc, options);
+            res.send(result);
+        })
 
+        app.post('/userProfile', async (req, res) => {
+            const userProfile = req.body;
+            const result = await userProfileCollection.insertOne(userProfile);
+            res.send({ success: true, result });
+        })
 
-
+        app.get('/userProfile', verifyJWT, async (req, res) => {
+            const email = req.query.email;
+            const query = { email: email };
+            const cursor = userProfileCollection.find(query);
+            const result = await cursor.toArray();
+            res.send(result)
+        })
     }
     finally {
 
     }
 }
-
 run().catch(console.dir);
-
 
 app.get('/', (req, res) => {
     res.send('Running Cakeries server');
