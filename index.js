@@ -9,7 +9,7 @@ const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
 const app = express();
 
 // middleware
-app.use(cors());
+app.use(cors({ origin: "https://cakeries-bd.web.app" }));
 app.use(express.json());
 
 
@@ -60,7 +60,7 @@ async function run() {
         }
 
         // Reviews started --> Getting all reviews
-        app.get('/reviews',  async (req, res) => {
+        app.get('/reviews', async (req, res) => {
             const query = {};
             const cursor = reviewCollection.find(query);
             const reviews = await cursor.toArray();
@@ -263,6 +263,7 @@ async function run() {
             const result = await userProfileCollection.insertOne(userProfile);
             res.send({ success: true, result });
         })
+
         app.get('/userProfile', verifyJWT, async (req, res) => {
             const email = req.query.email;
             const query = { email: email };
