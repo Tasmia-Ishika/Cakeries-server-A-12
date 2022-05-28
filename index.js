@@ -137,6 +137,7 @@ async function run() {
             res.send(result);
         })
 
+
         // user identify
         app.put('/user/:email', async (req, res) => {
             const email = req.params.email;
@@ -262,7 +263,6 @@ async function run() {
             const result = await userProfileCollection.insertOne(userProfile);
             res.send({ success: true, result });
         })
-
         app.get('/userProfile', verifyJWT, async (req, res) => {
             const email = req.query.email;
             const query = { email: email };
